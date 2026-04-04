@@ -1,36 +1,42 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Penny
 
-## Getting Started
+**Problem:** Personal finance apps feel like homework — too many categories and too little sense of where the month is going.
 
-First, run the development server:
+**Solution:** One-line spending, a plain-English monthly pulse, and a **forecast** for month-end total (including subscriptions) so you can act before the month ends.
+
+## Stack
+
+- Next.js (App Router), TypeScript, Tailwind, shadcn/ui
+- Supabase (Postgres, Auth magic link, Row Level Security)
+- Resend (email)
+- Vercel Cron (`vercel.json`) for weekly digest and monthly wrap-up
+
+## Run locally
+
+1. Copy `.env.example` to `.env.local` and fill in values from the Supabase dashboard (Settings → API) and [Resend](https://resend.com).
+
+2. Apply the SQL from the product spec in the Supabase SQL editor (tables, RLS, `handle_new_user` trigger).
+
+3. Install and dev:
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000). Sign in with a magic link at `/login`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `npm run dev` — development server
+- `npm run build` — production build
+- `npm run lint` — ESLint
+- `npm run typecheck` — `tsc --noEmit`
 
-## Learn More
+## Cron jobs (production)
 
-To learn more about Next.js, take a look at the following resources:
+Configure `CRON_SECRET` in Vercel and match the `Authorization: Bearer <CRON_SECRET>` check used by `/api/notifications/digest` and `/api/notifications/monthly`. Schedules are defined in `vercel.json`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## CI
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+GitHub Actions runs lint, typecheck, and build on push and pull requests.
