@@ -19,11 +19,18 @@ export function buildMonthlyPulse(input: PulseInput): string {
 
   const parts: string[] = [`You've spent ${totalStr} so far this month.`]
 
-  const food = byCategory.food ?? 0
+  const foodOut = byCategory.food ?? 0
+  const grocery = byCategory.groceries ?? 0
   const foodDelta = categoryDeltaPct?.food
-  if (food > 0 && foodDelta !== undefined && Math.abs(foodDelta) >= 5) {
+  if (
+    (foodOut > 0 || grocery > 0) &&
+    foodDelta !== undefined &&
+    Math.abs(foodDelta) >= 5
+  ) {
     const dir = foodDelta > 0 ? "up" : "down"
-    parts.push(`Food delivery and groceries are ${dir} about ${Math.round(Math.abs(foodDelta))}% vs last week.`)
+    parts.push(
+      `Food out and grocery spending are ${dir} about ${Math.round(Math.abs(foodDelta))}% vs last week.`
+    )
   }
 
   const top = Object.entries(byCategory)
@@ -46,6 +53,7 @@ export function buildMonthlyPulse(input: PulseInput): string {
 function formatCategoryLabel(c: SpendCategory): string {
   const map: Record<SpendCategory, string> = {
     rent: "rent",
+    groceries: "groceries",
     food: "food",
     travel: "travel",
     subscriptions: "subscriptions",

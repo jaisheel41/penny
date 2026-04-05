@@ -111,9 +111,12 @@ export async function POST(request: Request) {
   } = await supabase.auth.getUser()
   const email = fullUser?.email
 
-  await runPostTransactionNotifications(supabase, user.id, email, {
+  // Notifications are best-effort — never block or fail the transaction save
+  runPostTransactionNotifications(supabase, user.id, email, {
     insertedCategory: category,
     referenceDate: new Date(dateStr + "T12:00:00"),
+  }).catch((err) => {
+    console.warn("[notifications] post-transaction notification failed:", err?.message ?? err)
   })
 
   return NextResponse.json(data)

@@ -2,18 +2,27 @@
 
 import { useRouter } from "next/navigation"
 import { useMemo, useState } from "react"
-import { CalendarDays, Plus, Trash2 } from "lucide-react"
+import { motion, AnimatePresence } from "framer-motion"
+import { CalendarDays, Plus, RefreshCw, Trash2 } from "lucide-react"
 
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { EmptyState } from "@/components/ui/empty-state"
 import { Switch } from "@/components/ui/switch"
 import { formatMoney } from "@/lib/utils/parser"
 import type { Database } from "@/lib/supabase/types"
 import { cn } from "@/lib/utils"
+import { MOTION } from "@/lib/motion/presets"
 
 type Row = Database["public"]["Tables"]["subscriptions"]["Row"]
+
+const listItem = {
+  hidden: { opacity: 0, y: 12 },
+  show: (i: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.28, ease: MOTION.easeOutSoft, delay: i * 0.06 },
+  }),
+  exit: { opacity: 0, scale: 0.97, transition: { duration: 0.18 } },
+}
 
 export function SubscriptionsClient({
   currency,
@@ -28,15 +37,16 @@ export function SubscriptionsClient({
   const [amount, setAmount] = useState("")
   const [renewalDay, setRenewalDay] = useState("1")
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const monthlyTotal = useMemo(() => {
-    return rows
-      .filter((r) => r.active)
-      .reduce((s, r) => s + Number.parseFloat(r.amount), 0)
-  }, [rows])
+  const monthlyTotal = useMemo(
+    () => rows.filter((r) => r.active).reduce((s, r) => s + Number.parseFloat(r.amount), 0),
+    [rows]
+  )
 
   async function add(e: React.FormEvent) {
     e.preventDefault()
+    setError(null)
     const a = Number(amount)
     const rd = Number(renewalDay)
     if (!name.trim() || !Number.isFinite(a) || a <= 0) return
@@ -46,21 +56,17 @@ export function SubscriptionsClient({
       const res = await fetch("/api/subscriptions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: name.trim(),
-          amount: a,
-          renewal_day: rd,
-        }),
+        body: JSON.stringify({ name: name.trim(), amount: a, renewal_day: rd }),
       })
       const row = await res.json()
       if (res.ok) {
-        setRows((r) =>
-          [...r, row].sort((a, b) => a.name.localeCompare(b.name))
-        )
+        setRows((r) => [...r, row].sort((a, b) => a.name.localeCompare(b.name)))
         setName("")
         setAmount("")
         setRenewalDay("1")
         router.refresh()
+      } else {
+        setError(row.error ?? "Failed to add")
       }
     } finally {
       setLoading(false)
@@ -81,9 +87,7 @@ export function SubscriptionsClient({
   }
 
   async function remove(row: Row) {
-    const res = await fetch(`/api/subscriptions/${row.id}`, {
-      method: "DELETE",
-    })
+    const res = await fetch(`/api/subscriptions/${row.id}`, { method: "DELETE" })
     if (res.ok) {
       setRows((r) => r.filter((x) => x.id !== row.id))
       router.refresh()
@@ -91,79 +95,105 @@ export function SubscriptionsClient({
   }
 
   return (
-    <div className="space-y-6">
-      <div className="rounded-xl border bg-gradient-to-r from-violet-500/10 via-primary/5 to-transparent p-5">
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Active monthly total
-        </p>
-        <p className="mt-1 text-3xl font-bold tabular-nums">
-          {formatMoney(monthlyTotal, currency)}
-        </p>
+    <div className="space-y-5">
+      {/* Active monthly total */}
+      <div className="flex items-center justify-between rounded-2xl border border-penny-green/25 bg-penny-green-muted px-6 py-5 shadow-elevation-sm">
+        <div>
+          <p className="label-caps text-penny-green">Active monthly total</p>
+          <p
+            className="number-display mt-1 text-[32px] text-foreground"
+            style={{ letterSpacing: "-0.02em" }}
+          >
+            {formatMoney(monthlyTotal, currency)}
+          </p>
+        </div>
+        <div className="flex size-12 items-center justify-center rounded-full bg-penny-green/15">
+          <RefreshCw className="size-5 text-penny-green" aria-hidden />
+        </div>
       </div>
 
-      <Card className="border-dashed">
-        <CardContent className="pt-6">
-          <form onSubmit={add} className="flex flex-wrap items-end gap-4">
-            <div className="space-y-2">
-              <Label>Name</Label>
-              <Input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Netflix"
-                className="w-40"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Amount / month</Label>
-              <Input
-                type="number"
-                step="0.01"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                className="w-32"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Renewal day</Label>
-              <Input
-                type="number"
-                min={1}
-                max={31}
-                value={renewalDay}
-                onChange={(e) => setRenewalDay(e.target.value)}
-                className="w-24"
-              />
-            </div>
-            <Button type="submit" disabled={loading} className="gap-2">
-              <Plus className="size-4" />
-              Add
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+      <div className="rounded-2xl border border-border bg-card p-6 shadow-elevation-sm">
+        <p className="mb-4 label-caps text-muted-foreground">Add subscription</p>
+        <form onSubmit={add} className="flex flex-wrap items-end gap-3">
+          <div className="space-y-1.5">
+            <label className="text-[13px] font-medium text-foreground">Name</label>
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Netflix"
+              className="h-9 w-44 rounded-lg border border-border bg-muted px-3 text-[14px] text-foreground placeholder:text-muted-foreground outline-none transition-[border-color,box-shadow] focus:border-penny-green focus:bg-card focus:ring-3 focus:ring-penny-green/15"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-[13px] font-medium text-foreground">Amount / month</label>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder="9.99"
+              className="h-9 w-32 rounded-lg border border-border bg-muted px-3 text-[14px] text-foreground placeholder:text-muted-foreground outline-none transition-[border-color,box-shadow] focus:border-penny-green focus:bg-card focus:ring-3 focus:ring-penny-green/15"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-[13px] font-medium text-foreground">Renewal day</label>
+            <input
+              type="number"
+              min={1}
+              max={31}
+              value={renewalDay}
+              onChange={(e) => setRenewalDay(e.target.value)}
+              className="h-9 w-20 rounded-lg border border-border bg-muted px-3 text-[14px] text-foreground outline-none transition-[border-color,box-shadow] focus:border-penny-green focus:bg-card focus:ring-3 focus:ring-penny-green/15"
+            />
+          </div>
+          <motion.button
+            type="submit"
+            disabled={loading}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.97 }}
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-penny-green px-4 text-[14px] font-medium text-white shadow-elevation-sm transition-colors hover:bg-penny-green-hover disabled:opacity-60"
+          >
+            <Plus className="size-4" aria-hidden />
+            {loading ? "Adding…" : "Add"}
+          </motion.button>
+        </form>
+        {error && <p className="mt-2 text-[13px] text-destructive">{error}</p>}
+      </div>
 
       {rows.length === 0 ? (
-        <p className="py-8 text-center text-sm text-muted-foreground">
-          No subscriptions yet. Add one above.
-        </p>
+        <EmptyState
+          icon={RefreshCw}
+          title="No subscriptions yet"
+          description="Add one above to start tracking."
+        />
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
-          {rows.map((r) => (
-            <Card
-              key={r.id}
-              className={cn(
-                "overflow-hidden transition-all hover:shadow-md",
-                !r.active && "opacity-60"
-              )}
-            >
-              <CardContent className="space-y-3 pt-5">
+          <AnimatePresence mode="popLayout">
+            {rows.map((r, i) => (
+              <motion.div
+                key={r.id}
+                custom={i}
+                variants={listItem}
+                initial="hidden"
+                animate="show"
+                exit="exit"
+                layout
+                className={cn(
+                  "group rounded-2xl border border-border bg-card p-5 shadow-elevation-sm transition-[border-color,opacity,box-shadow] duration-200 hover:border-border-strong hover:shadow-elevation-md",
+                  !r.active && "opacity-50"
+                )}
+              >
                 <div className="flex items-start justify-between">
-                  <div>
-                    <p className="font-semibold">{r.name}</p>
-                    <p className="mt-0.5 text-xl font-bold tabular-nums">
+                  <div className="min-w-0">
+                    <p className="truncate text-[15px] font-semibold text-foreground">{r.name}</p>
+                    <p
+                      className="mt-0.5 text-[22px] font-bold tabular-nums text-foreground"
+                      style={{ letterSpacing: "-0.02em" }}
+                    >
                       {formatMoney(Number.parseFloat(r.amount), currency)}
-                      <span className="ml-1.5 text-sm font-normal text-muted-foreground">
-                        / month
+                      <span className="ml-1.5 text-[13px] font-normal text-muted-foreground">
+                        / mo
                       </span>
                     </p>
                   </div>
@@ -172,23 +202,23 @@ export function SubscriptionsClient({
                     onCheckedChange={(v) => toggleActive(r, v)}
                   />
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <CalendarDays className="size-3" />
+
+                <div className="mt-4 flex items-center justify-between">
+                  <span className="inline-flex items-center gap-1.5 text-[12px] text-muted-foreground">
+                    <CalendarDays className="size-3.5" aria-hidden />
                     Renews day {r.renewal_day}
                   </span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="size-8 p-0 text-muted-foreground hover:text-destructive"
+                  <button
+                    type="button"
                     onClick={() => remove(r)}
+                    className="flex size-7 items-center justify-center rounded-lg text-border-strong transition-colors hover:bg-destructive/10 hover:text-destructive"
                   >
                     <Trash2 className="size-3.5" />
-                  </Button>
+                  </button>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </div>
       )}
     </div>

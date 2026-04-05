@@ -37,7 +37,7 @@ export function foodWeekOverWeekDeltaPct(
   const food = (from: number, to: number) => {
     let s = 0
     for (const r of rows) {
-      if (r.category !== "food") continue
+      if (r.category !== "food" && r.category !== "groceries") continue
       const dt = new Date(r.date + "T12:00:00").getTime()
       if (dt >= from && dt < to) s += Number.parseFloat(r.amount)
     }

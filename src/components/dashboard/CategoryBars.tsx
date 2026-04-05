@@ -1,5 +1,9 @@
+"use client"
+
+import { motion } from "framer-motion"
 import {
   Home,
+  ShoppingCart,
   UtensilsCrossed,
   Plane,
   RefreshCw,
@@ -8,48 +12,68 @@ import {
   CircleDot,
 } from "lucide-react"
 
+import { EmptyState } from "@/components/ui/empty-state"
 import { SPEND_CATEGORIES, type SpendCategory } from "@/types"
 import { formatMoney } from "@/lib/utils/parser"
+import { MOTION } from "@/lib/motion/presets"
 import { cn } from "@/lib/utils"
 
 const CATEGORY_META: Record<
   SpendCategory,
-  { icon: React.ComponentType<{ className?: string }>; color: string; gradient: string }
+  {
+    icon: React.ComponentType<{ className?: string }>
+    color: string
+    barColor: string
+    bg: string
+  }
 > = {
   rent: {
     icon: Home,
-    color: "text-blue-600 dark:text-blue-400",
-    gradient: "from-blue-500 to-blue-600",
+    color: "text-blue-600",
+    barColor: "#3B82F6",
+    bg: "bg-blue-50",
+  },
+  groceries: {
+    icon: ShoppingCart,
+    color: "text-emerald-600",
+    barColor: "#059669",
+    bg: "bg-emerald-50",
   },
   food: {
     icon: UtensilsCrossed,
-    color: "text-orange-600 dark:text-orange-400",
-    gradient: "from-orange-400 to-orange-500",
+    color: "text-orange-600",
+    barColor: "#F97316",
+    bg: "bg-orange-50",
   },
   travel: {
     icon: Plane,
-    color: "text-sky-600 dark:text-sky-400",
-    gradient: "from-sky-400 to-sky-500",
+    color: "text-sky-600",
+    barColor: "#0EA5E9",
+    bg: "bg-sky-50",
   },
   subscriptions: {
     icon: RefreshCw,
-    color: "text-violet-600 dark:text-violet-400",
-    gradient: "from-violet-400 to-violet-500",
+    color: "text-violet-600",
+    barColor: "#8B5CF6",
+    bg: "bg-violet-50",
   },
   clothes: {
     icon: Shirt,
-    color: "text-pink-600 dark:text-pink-400",
-    gradient: "from-pink-400 to-pink-500",
+    color: "text-pink-600",
+    barColor: "#EC4899",
+    bg: "bg-pink-50",
   },
   entertainment: {
     icon: Popcorn,
-    color: "text-amber-600 dark:text-amber-400",
-    gradient: "from-amber-400 to-amber-500",
+    color: "text-amber-600",
+    barColor: "#D97706",
+    bg: "bg-amber-50",
   },
   misc: {
     icon: CircleDot,
-    color: "text-slate-600 dark:text-slate-400",
-    gradient: "from-slate-400 to-slate-500",
+    color: "text-muted-foreground",
+    barColor: "#a8a29e",
+    bg: "bg-muted",
   },
 }
 
@@ -67,67 +91,71 @@ export function CategoryBars(props: {
 
   if (entries.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-xl border bg-card p-10 text-center shadow-sm">
-        <div className="mb-3 flex size-12 items-center justify-center rounded-full bg-muted">
-          <CircleDot className="size-5 text-muted-foreground" />
-        </div>
-        <p className="font-medium">No spending yet</p>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Use the quick-add input above to log your first expense.
-        </p>
-      </div>
+      <EmptyState
+        icon={CircleDot}
+        title="No spending yet"
+        description="Use the quick-add above to log your first expense."
+        className="p-10"
+      />
     )
   }
 
   return (
-    <div className="rounded-xl border bg-card p-5 shadow-sm">
-      <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-sm font-semibold">Spending by category</h3>
-        <span className="text-xs tabular-nums text-muted-foreground">
+    <div className="rounded-2xl border border-border bg-card p-6 shadow-elevation-sm transition-[border-color,box-shadow] duration-200 hover:border-border-strong hover:shadow-elevation-md">
+      <div className="mb-5 flex items-center justify-between">
+        <h3 className="text-[16px] font-semibold tracking-tight text-foreground">
+          Spending by category
+        </h3>
+        <span className="text-[12px] tabular-nums text-muted-foreground">
           {entries.length} categor{entries.length === 1 ? "y" : "ies"}
         </span>
       </div>
-      <ul className="space-y-4">
+
+      <ul className="space-y-5">
         {entries
           .sort((a, b) => b.v - a.v)
-          .map(({ c, v }) => {
+          .map(({ c, v }, idx) => {
             const meta = CATEGORY_META[c]
             const Icon = meta.icon
             const pct = totalSpent > 0 ? Math.round((v / totalSpent) * 100) : 0
+            const barWidth = (v / max) * 100
+
             return (
-              <li key={c} className="group">
-                <div className="mb-1.5 flex items-center justify-between gap-2">
+              <li key={c}>
+                <div className="mb-2 flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2.5">
                     <div
                       className={cn(
-                        "flex size-7 items-center justify-center rounded-md bg-muted transition-colors group-hover:bg-muted/80",
-                        meta.color
+                        "flex size-8 items-center justify-center rounded-lg",
+                        meta.bg
                       )}
                     >
-                      <Icon className="size-3.5" />
+                      <Icon className={cn("size-4", meta.color)} />
                     </div>
-                    <span className="text-sm font-medium capitalize">
+                    <span className="text-[14px] font-medium capitalize text-foreground">
                       {c}
                     </span>
                   </div>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-xs tabular-nums text-muted-foreground">
+                    <span className="text-[12px] tabular-nums text-muted-foreground">
                       {pct}%
                     </span>
-                    <span className="text-sm font-semibold tabular-nums">
+                    <span className="text-[14px] font-semibold tabular-nums text-foreground">
                       {formatMoney(v, currency)}
                     </span>
                   </div>
                 </div>
                 <div className="h-2 overflow-hidden rounded-full bg-muted">
-                  <div
-                    className={cn(
-                      "h-full rounded-full bg-gradient-to-r transition-all duration-500",
-                      meta.gradient
-                    )}
-                    style={{
-                      width: `${Math.min(100, (v / max) * 100)}%`,
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${barWidth}%` }}
+                    transition={{
+                      duration: 0.8,
+                      ease: MOTION.easeOutSoft,
+                      delay: 0.3 + idx * 0.06,
                     }}
+                    className="h-full rounded-full"
+                    style={{ backgroundColor: meta.barColor }}
                   />
                 </div>
               </li>

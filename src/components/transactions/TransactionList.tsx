@@ -1,7 +1,7 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Pencil, Trash2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -31,10 +31,13 @@ type Row = Database["public"]["Tables"]["transactions"]["Row"]
 export function TransactionList({
   initial,
   month,
+  category = "",
   currency = "GBP",
 }: {
   initial: Row[]
   month: string
+  /** When set, must match server filter and API refresh. */
+  category?: string
   currency?: string
 }) {
   const router = useRouter()
@@ -43,8 +46,14 @@ export function TransactionList({
   const [deleting, setDeleting] = useState<Row | null>(null)
   const [loading, setLoading] = useState(false)
 
+  useEffect(() => {
+    setRows(initial)
+  }, [initial])
+
   async function refresh() {
-    const res = await fetch(`/api/transactions?month=${month}`)
+    const q = new URLSearchParams({ month })
+    if (category) q.set("category", category)
+    const res = await fetch(`/api/transactions?${q.toString()}`)
     const data = await res.json()
     if (res.ok) setRows(data)
     router.refresh()

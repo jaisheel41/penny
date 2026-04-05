@@ -43,10 +43,13 @@ export default async function ManagePage({ searchParams }: Props) {
       : "GBP"
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Manage</h1>
-        <p className="text-sm text-muted-foreground">
+    <div className="mx-auto max-w-[1200px] px-8 py-8">
+      {/* Page header */}
+      <div className="mb-8">
+        <h1 className="heading-tight text-2xl text-foreground sm:text-[24px]">
+          Manage
+        </h1>
+        <p className="mt-1 text-sm leading-relaxed text-muted-foreground sm:text-[14px]">
           Transactions, budgets &amp; subscriptions — all in one place.
         </p>
       </div>
@@ -104,16 +107,16 @@ async function TransactionsTab({
   }
 
   const { data: transactions } = await q
-
   const base = "/manage?tab=transactions"
 
   return (
     <div className="space-y-4">
+      {/* Category filter chips */}
       <div className="flex flex-wrap gap-2">
         <FilterChip
           href={`${base}&month=${month}`}
           active={!category}
-          label="All categories"
+          label="All"
         />
         {SPEND_CATEGORIES.map((c) => (
           <FilterChip
@@ -125,8 +128,10 @@ async function TransactionsTab({
         ))}
       </div>
       <TransactionList
+        key={`${month}-${category || "all"}`}
         initial={transactions ?? []}
         month={month}
+        category={category}
         currency={currency}
       />
     </div>
@@ -201,10 +206,10 @@ function FilterChip({
     <Link
       href={href}
       className={cn(
-        "rounded-full border px-3 py-1 text-sm capitalize transition-colors",
+        "rounded-full border px-3.5 py-1.5 text-[13px] font-medium capitalize transition-all duration-150",
         active
-          ? "border-primary bg-primary text-primary-foreground"
-          : "border-border hover:bg-muted"
+          ? "border-penny-green bg-penny-green-muted text-penny-green shadow-elevation-sm"
+          : "border-border bg-card text-muted-foreground hover:border-border-strong hover:text-foreground"
       )}
     >
       {label}
@@ -215,12 +220,15 @@ function FilterChip({
 function TabSkeleton() {
   return (
     <div className="space-y-4">
-      <div className="flex gap-1 rounded-xl bg-muted/60 p-1.5">
+      <div className="flex gap-1.5 rounded-2xl border border-border bg-muted p-1.5">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="h-10 flex-1 animate-pulse rounded-lg bg-muted" />
+          <div
+            key={i}
+            className="h-10 flex-1 animate-pulse rounded-xl bg-border"
+          />
         ))}
       </div>
-      <div className="h-64 animate-pulse rounded-xl bg-muted/40" />
+      <div className="h-64 animate-pulse rounded-2xl bg-muted" />
     </div>
   )
 }

@@ -153,6 +153,81 @@ export interface Database {
         }
         Relationships: []
       }
+      goals: {
+        Row: {
+          id: string
+          user_id: string
+          name: string
+          emoji: string
+          target_amount: string
+          saved_amount: string
+          monthly_contribution: string
+          priority: number
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          name: string
+          emoji?: string
+          target_amount: string | number
+          saved_amount?: string | number
+          monthly_contribution: string | number
+          priority?: number
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          name?: string
+          emoji?: string
+          target_amount?: string | number
+          saved_amount?: string | number
+          monthly_contribution?: string | number
+          priority?: number
+          created_at?: string | null
+        }
+        Relationships: []
+      }
+      networth_snapshots: {
+        Row: {
+          id: string
+          user_id: string
+          month: string
+          savings: string
+          investments: string
+          pension: string
+          property_equity: string
+          total_debt: string
+          note: string | null
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          month: string
+          savings?: string | number
+          investments?: string | number
+          pension?: string | number
+          property_equity?: string | number
+          total_debt?: string | number
+          note?: string | null
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          month?: string
+          savings?: string | number
+          investments?: string | number
+          pension?: string | number
+          property_equity?: string | number
+          total_debt?: string | number
+          note?: string | null
+          created_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: Record<string, never>
     Functions: Record<string, never>

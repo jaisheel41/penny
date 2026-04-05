@@ -74,6 +74,7 @@ export async function runPostTransactionNotifications(
     monthToDateSpend: monthTotal,
     referenceDate: ref,
     subscriptionMonthlyTotal: subTotal,
+    oneOffCosts: byCat.rent ?? 0,
   })
 
   if (income > 0 && projectedTotal > income) {

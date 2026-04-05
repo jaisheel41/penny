@@ -1,20 +1,31 @@
-import { MessageSquareText } from "lucide-react"
+"use client"
+
+import { motion, useReducedMotion } from "framer-motion"
+
+import { MOTION } from "@/lib/motion/presets"
 
 export function MonthlyPulse({ text }: { text: string }) {
+  const reduceMotion = useReducedMotion()
+  const r = reduceMotion === true
+
   return (
-    <div className="relative overflow-hidden rounded-xl border bg-gradient-to-br from-violet-500/5 via-background to-violet-500/[0.02] p-5 shadow-sm">
-      <div className="absolute -right-6 -top-6 size-20 rounded-full bg-violet-500/8 blur-2xl" />
-      <div className="relative">
-        <div className="mb-3 flex items-center gap-2">
-          <div className="flex size-8 items-center justify-center rounded-lg bg-violet-500/10 dark:bg-violet-400/10">
-            <MessageSquareText className="size-4 text-violet-600 dark:text-violet-400" />
-          </div>
-          <h3 className="text-sm font-semibold">Monthly pulse</h3>
-        </div>
-        <p className="text-[15px] leading-relaxed text-muted-foreground">
-          {text}
-        </p>
+    <motion.div
+      whileHover={r ? undefined : { scale: 1.005 }}
+      transition={{ duration: MOTION.fast }}
+      className="rounded-2xl border border-penny-green/25 bg-penny-green-muted p-6 shadow-elevation-sm"
+    >
+      <div className="mb-3 flex items-center gap-2">
+        <span
+          className="inline-block size-2 rounded-full bg-penny-green"
+          aria-hidden
+        />
+        <p className="label-caps text-penny-green">Penny says</p>
       </div>
-    </div>
+
+      <p className="text-[15px] leading-[1.75] text-foreground">{text}</p>
+      <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
+        Plain-language read based on this month&apos;s activity and income.
+      </p>
+    </motion.div>
   )
 }

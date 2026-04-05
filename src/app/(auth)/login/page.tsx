@@ -3,7 +3,8 @@
 import { Suspense, useState } from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
-import { Sparkles } from "lucide-react"
+import { MailCheck, Sparkles } from "lucide-react"
+import { motion, useReducedMotion } from "framer-motion"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -15,11 +16,13 @@ import {
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { MOTION } from "@/lib/motion/presets"
 import { createClient } from "@/lib/supabase/client"
 
 function LoginForm() {
   const searchParams = useSearchParams()
   const error = searchParams.get("error")
+  const reduceMotion = useReducedMotion()
   const [email, setEmail] = useState("")
   const [sent, setSent] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -45,68 +48,96 @@ function LoginForm() {
   }
 
   return (
-    <Card className="w-full max-w-md border border-white/20 bg-card/80 shadow-2xl shadow-primary/10 backdrop-blur-xl">
-      <CardHeader className="space-y-2 text-center">
-        <div className="mx-auto mb-2 flex size-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/30">
-          <Sparkles className="size-5" />
+    <>
+      <div className="mb-8 text-center lg:hidden">
+        <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-2xl bg-penny-green text-white shadow-elevation-sm">
+          <Sparkles className="size-5" aria-hidden />
         </div>
-        <CardTitle className="text-2xl font-semibold tracking-tight">
-          Sign in to Penny
-        </CardTitle>
-        <CardDescription>
-          We&apos;ll email you a magic link. No password.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {error === "auth" && (
-          <p className="mb-4 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
-            Something went wrong signing you in. Try again.
-          </p>
-        )}
-        {sent ? (
-          <div className="rounded-lg bg-emerald-500/10 p-4 text-center text-sm">
-            <p className="font-medium text-emerald-700 dark:text-emerald-400">
-              Check your inbox
-            </p>
-            <p className="mt-1 text-muted-foreground">
-              We sent a sign-in link to <strong>{email}</strong>.
-            </p>
+        <p className="text-lg font-semibold tracking-tight text-foreground">Sign in to Penny</p>
+        <p className="mt-1 text-sm text-muted-foreground">We&apos;ll email you a magic link.</p>
+      </div>
+
+      <Card className="w-full border-border shadow-elevation-md">
+        <CardHeader className="hidden space-y-2 text-center lg:block lg:pt-8">
+          <div className="mx-auto mb-2 flex size-12 items-center justify-center rounded-2xl bg-penny-green text-white shadow-elevation-sm">
+            <Sparkles className="size-5" aria-hidden />
           </div>
-        ) : (
-          <form onSubmit={onSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                autoComplete="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                className="bg-background/50"
-              />
-            </div>
-            {err && <p className="text-sm text-destructive">{err}</p>}
-            <Button
-              type="submit"
-              className="w-full shadow-lg shadow-primary/20"
-              disabled={loading}
+          <CardTitle className="text-2xl tracking-tight">Sign in to Penny</CardTitle>
+          <CardDescription className="text-pretty">
+            We&apos;ll email you a magic link — no password needed.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {error === "auth" && (
+            <p className="mb-4 rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
+              Something went wrong signing you in. Try again.
+            </p>
+          )}
+          {sent ? (
+            <motion.div
+              initial={reduceMotion ? false : { opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{
+                duration: MOTION.base,
+                ease: MOTION.easeStandard,
+              }}
+              className="rounded-xl border border-penny-green/25 bg-penny-green-muted p-6 text-center"
             >
-              {loading ? "Sending…" : "Send magic link"}
-            </Button>
-          </form>
-        )}
-        <p className="mt-6 text-center text-sm text-muted-foreground">
-          <Link
-            href="/"
-            className="underline underline-offset-4 hover:text-foreground"
-          >
-            Back to home
-          </Link>
-        </p>
-      </CardContent>
-    </Card>
+              <motion.div
+                className="mx-auto mb-4 flex size-14 items-center justify-center rounded-full bg-card text-penny-green shadow-elevation-sm"
+                initial={reduceMotion ? false : { scale: 0.85, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{
+                  type: "spring",
+                  stiffness: 380,
+                  damping: 22,
+                  delay: reduceMotion ? 0 : 0.05,
+                }}
+              >
+                <MailCheck className="size-7" aria-hidden />
+              </motion.div>
+              <p className="font-semibold text-penny-green">Check your inbox</p>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                We sent a sign-in link to <strong className="text-foreground">{email}</strong>.
+              </p>
+            </motion.div>
+          ) : (
+            <form onSubmit={onSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email address</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                />
+              </div>
+              {err && <p className="text-sm text-destructive">{err}</p>}
+              <Button
+                type="submit"
+                variant="success"
+                size="lg"
+                className="w-full shadow-elevation-sm transition-shadow hover:shadow-elevation-md"
+                disabled={loading}
+              >
+                {loading ? "Sending…" : "Send magic link"}
+              </Button>
+            </form>
+          )}
+          <p className="mt-6 text-center text-sm text-muted-foreground">
+            <Link
+              href="/"
+              className="font-medium text-penny-teal underline-offset-4 hover:underline"
+            >
+              Back to home
+            </Link>
+          </p>
+        </CardContent>
+      </Card>
+    </>
   )
 }
 
@@ -114,7 +145,9 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <Card className="w-full max-w-md p-8">Loading…</Card>
+        <Card className="w-full max-w-md border-border p-8 shadow-elevation-sm">
+          Loading…
+        </Card>
       }
     >
       <LoginForm />
