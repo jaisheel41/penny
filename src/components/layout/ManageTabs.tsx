@@ -5,7 +5,6 @@ import { motion } from "framer-motion"
 import { CreditCard, PiggyBank, RefreshCw } from "lucide-react"
 
 import { MOTION } from "@/lib/motion/presets"
-import { cn } from "@/lib/utils"
 
 const tabs = [
   { key: "transactions", label: "Transactions", icon: CreditCard },
@@ -23,40 +22,72 @@ export function ManageTabs({ children }: { children: React.ReactNode }) {
   function switchTab(key: string) {
     const current = new URLSearchParams(Array.from(searchParams.entries()))
     current.set("tab", key)
-    // Preserve month param, drop category on tab switch
     current.delete("category")
     router.push(`/manage?${current.toString()}`)
   }
 
   return (
-    <div className="space-y-6">
-      {/* Tab bar */}
-      <div className="flex gap-1 rounded-2xl border border-border bg-surface-inset/80 p-1.5 shadow-inner">
+    <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+      {/* ── Tab bar ─────────────────────────────────────────────────── */}
+      <div
+        style={{
+          display: "flex",
+          gap: "0.25rem",
+          background: "rgba(255,255,255,0.03)",
+          border: "1px solid rgba(255,255,255,0.07)",
+          borderRadius: "0.875rem",
+          padding: "0.3rem",
+          WebkitFontSmoothing: "antialiased",
+        }}
+      >
         {tabs.map(({ key, label, icon: Icon }) => {
           const isActive = active === key
           return (
             <button
               key={key}
+              type="button"
               onClick={() => switchTab(key)}
-              className={cn(
-                "relative flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors duration-150",
-                isActive
-                  ? "text-foreground"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
+              style={{
+                position: "relative",
+                flex: 1,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "0.5rem",
+                padding: "0.6rem 1rem",
+                borderRadius: "0.625rem",
+                border: "none",
+                background: "transparent",
+                cursor: "pointer",
+                fontSize: "0.825rem",
+                fontWeight: isActive ? 600 : 400,
+                color: isActive ? "#f0efe9" : "rgba(240,239,233,0.42)",
+                transition: "color 0.15s ease",
+                fontFamily: "var(--font-geist-sans)",
+              }}
             >
               {isActive && (
                 <motion.div
                   layoutId="activeTab"
-                  className="absolute inset-0 rounded-xl bg-card shadow-elevation-sm"
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    background: "rgba(255,255,255,0.07)",
+                    borderRadius: "0.625rem",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                  }}
                   transition={{ type: "spring", stiffness: 400, damping: 35 }}
                 />
               )}
               <Icon
-                className={cn(
-                  "relative z-10 size-4 shrink-0",
-                  isActive ? "text-penny-green" : "text-muted-foreground/70"
-                )}
+                style={{
+                  position: "relative",
+                  zIndex: 1,
+                  width: "0.9rem",
+                  height: "0.9rem",
+                  flexShrink: 0,
+                  color: isActive ? "#22c55e" : "rgba(240,239,233,0.3)",
+                }}
               />
               <span className="relative z-10 hidden sm:inline">{label}</span>
             </button>
@@ -64,15 +95,12 @@ export function ManageTabs({ children }: { children: React.ReactNode }) {
         })}
       </div>
 
-      {/* Tab content with entrance animation */}
+      {/* ── Tab content ─────────────────────────────────────────────── */}
       <motion.div
         key={active}
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{
-          duration: MOTION.base,
-          ease: MOTION.easeOutSoft,
-        }}
+        transition={{ duration: MOTION.base, ease: MOTION.easeOutSoft }}
       >
         {children}
       </motion.div>

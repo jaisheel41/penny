@@ -2,7 +2,7 @@ import { redirect } from "next/navigation"
 
 import { Toaster } from "sonner"
 
-import { Sidebar } from "@/components/layout/Sidebar"
+import { TopNav } from "@/components/layout/TopNav"
 import { createClient } from "@/lib/supabase/server"
 
 export default async function DashboardLayout({
@@ -20,9 +20,15 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
-      <Sidebar email={user.email ?? ""} />
-      <main className="h-screen flex-1 overflow-y-auto pb-16 transition-colors duration-[var(--motion-base)] md:pb-0">
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "#0d0d0c",
+        WebkitFontSmoothing: "antialiased",
+      }}
+    >
+      <TopNav email={user.email ?? ""} />
+      <main style={{ minHeight: "calc(100vh - 3.75rem)" }}>
         {children}
         <Toaster richColors position="top-center" />
       </main>

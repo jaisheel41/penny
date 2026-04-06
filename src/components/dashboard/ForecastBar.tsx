@@ -5,7 +5,6 @@ import { TrendingUp, AlertTriangle, ArrowRight } from "lucide-react"
 import CountUp from "react-countup"
 
 import { formatMoney } from "@/lib/utils/parser"
-import { cn } from "@/lib/utils"
 import { MOTION } from "@/lib/motion/presets"
 
 export function ForecastBar(props: {
@@ -34,7 +33,13 @@ export function ForecastBar(props: {
       ? Math.min(100, (totalSpent / monthlyIncome) * 100)
       : 0
 
-  const barColor = over ? "var(--penny-danger)" : pct >= 70 ? "var(--penny-amber)" : "var(--penny-green)"
+  const barColor = over ? "#f87171" : pct >= 70 ? "#d97706" : "#22c55e"
+  const borderColor = over
+    ? "rgba(248,113,113,0.18)"
+    : "rgba(255,255,255,0.08)"
+  const bgTint = over
+    ? "rgba(248,113,113,0.04)"
+    : "rgba(255,255,255,0.04)"
 
   let narrative = ""
   if (monthlyIncome <= 0) {
@@ -42,7 +47,7 @@ export function ForecastBar(props: {
   } else if (over) {
     narrative = "At your current daily pace, month-end spend is projected to go over income."
   } else if (pct >= 85) {
-    narrative = "You have used most of this month’s income—discretionary room is tight."
+    narrative = "You have used most of this month's income — discretionary room is tight."
   } else if (pct >= 70) {
     narrative = "You are past the halfway mark; keep an eye on variable categories."
   } else {
@@ -51,25 +56,49 @@ export function ForecastBar(props: {
 
   return (
     <motion.div
-      whileHover={r ? undefined : { scale: 1.005 }}
+      whileHover={r ? undefined : { scale: 1.003 }}
       transition={{ duration: MOTION.fast }}
-      className={cn(
-        "rounded-2xl border p-6 shadow-elevation-sm transition-[border-color,box-shadow] duration-200",
-        over
-          ? "border-destructive/25 bg-destructive/5 hover:border-destructive/40 hover:shadow-elevation-md"
-          : "border-border bg-card hover:border-border-strong hover:shadow-elevation-md"
-      )}
+      style={{
+        background: bgTint,
+        border: `1px solid ${borderColor}`,
+        borderRadius: "1rem",
+        padding: "1.5rem",
+        transition: "border-color 0.2s ease",
+        WebkitFontSmoothing: "antialiased",
+      }}
     >
-      <div className="mb-1 flex items-center gap-2">
+      {/* Label row */}
+      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
         {over ? (
-          <AlertTriangle className="size-4 text-destructive" aria-hidden />
+          <AlertTriangle style={{ width: "1rem", height: "1rem", color: "#f87171", flexShrink: 0 }} />
         ) : (
-          <TrendingUp className="size-4 text-penny-green" aria-hidden />
+          <TrendingUp style={{ width: "1rem", height: "1rem", color: "#22c55e", flexShrink: 0 }} />
         )}
-        <p className="label-caps text-muted-foreground">Month-end forecast</p>
+        <p
+          style={{
+            fontSize: "0.65rem",
+            fontWeight: 700,
+            letterSpacing: "0.1em",
+            textTransform: "uppercase",
+            color: "rgba(240,239,233,0.35)",
+          }}
+        >
+          Month-end forecast
+        </p>
       </div>
 
-      <p className="number-display mt-2 text-[36px] leading-none text-foreground">
+      {/* Big number */}
+      <p
+        style={{
+          marginTop: "0.5rem",
+          fontSize: "2.25rem",
+          fontWeight: 800,
+          letterSpacing: "-0.04em",
+          lineHeight: 1,
+          color: "#f0efe9",
+          fontVariantNumeric: "tabular-nums",
+        }}
+      >
         <CountUp
           end={projectedTotal}
           duration={r ? 0 : 1.2}
@@ -80,25 +109,43 @@ export function ForecastBar(props: {
         />
       </p>
 
-      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-muted-foreground">
-        <span className="tabular-nums">{formatMoney(dailyRate, currency)}/day</span>
-        <span className="text-border-strong">·</span>
+      {/* Meta row */}
+      <div
+        style={{
+          marginTop: "0.5rem",
+          display: "flex",
+          flexWrap: "wrap",
+          alignItems: "center",
+          gap: "0.375rem 0.75rem",
+          fontSize: "0.8rem",
+          color: "rgba(240,239,233,0.35)",
+        }}
+      >
+        <span style={{ fontVariantNumeric: "tabular-nums" }}>
+          {formatMoney(dailyRate, currency)}/day
+        </span>
+        <span style={{ color: "rgba(255,255,255,0.12)" }}>·</span>
         <span>{daysRemaining} days left</span>
         {monthlyIncome > 0 && (
           <span
-            className={cn(
-              "ml-auto flex items-center gap-1 text-[12px] font-semibold",
-              over ? "text-destructive" : "text-penny-green"
-            )}
+            style={{
+              marginLeft: "auto",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.25rem",
+              fontSize: "0.75rem",
+              fontWeight: 600,
+              color: barColor,
+            }}
           >
             {over ? (
               <>
-                <AlertTriangle className="size-3" aria-hidden />
+                <AlertTriangle style={{ width: "0.75rem", height: "0.75rem" }} />
                 Over by {formatMoney(projectedTotal - monthlyIncome, currency)}
               </>
             ) : (
               <>
-                <ArrowRight className="size-3" aria-hidden />
+                <ArrowRight style={{ width: "0.75rem", height: "0.75rem" }} />
                 {formatMoney(monthlyIncome - projectedTotal, currency)} buffer
               </>
             )}
@@ -106,28 +153,55 @@ export function ForecastBar(props: {
         )}
       </div>
 
-      <p className="mt-3 text-[13px] leading-relaxed text-muted-foreground">{narrative}</p>
+      {/* Narrative */}
+      <p
+        style={{
+          marginTop: "0.75rem",
+          fontSize: "0.8rem",
+          lineHeight: 1.65,
+          color: "rgba(240,239,233,0.3)",
+        }}
+      >
+        {narrative}
+      </p>
 
+      {/* Progress bar */}
       {monthlyIncome > 0 && (
-        <div className="mt-5">
-          <div className="h-2.5 overflow-hidden rounded-full bg-muted">
+        <div style={{ marginTop: "1.25rem" }}>
+          <div
+            style={{
+              height: "0.5rem",
+              borderRadius: "9999px",
+              overflow: "hidden",
+              background: "rgba(255,255,255,0.08)",
+            }}
+          >
             <motion.div
               initial={r ? { width: `${pct}%` } : { width: "0%" }}
               animate={{ width: `${pct}%` }}
-              transition={{
-                duration: r ? 0 : 1.2,
-                ease: "easeOut",
-                delay: r ? 0 : 0.4,
+              transition={{ duration: r ? 0 : 1.2, ease: "easeOut", delay: r ? 0 : 0.4 }}
+              style={{
+                height: "100%",
+                borderRadius: "9999px",
+                background: barColor,
               }}
-              className="h-full rounded-full"
-              style={{ backgroundColor: barColor }}
             />
           </div>
-          <div className="mt-2 flex justify-between text-[11px] tabular-nums">
-            <span className="font-medium" style={{ color: barColor }}>
+          <div
+            style={{
+              marginTop: "0.5rem",
+              display: "flex",
+              justifyContent: "space-between",
+              fontSize: "0.68rem",
+              fontVariantNumeric: "tabular-nums",
+            }}
+          >
+            <span style={{ fontWeight: 600, color: barColor }}>
               {formatMoney(totalSpent, currency)} spent
             </span>
-            <span className="text-muted-foreground">{Math.round(pct)}% of income</span>
+            <span style={{ color: "rgba(240,239,233,0.28)" }}>
+              {Math.round(pct)}% of income
+            </span>
           </div>
         </div>
       )}

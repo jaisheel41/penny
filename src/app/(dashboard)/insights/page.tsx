@@ -11,12 +11,11 @@ import {
   type SpendDnaCategory,
 } from "@/lib/insights/spend-dna"
 import { formatMoney } from "@/lib/utils/parser"
-import { cn } from "@/lib/utils"
-import { CategoryBars } from "@/components/dashboard/CategoryBars"
 import {
   SpendDNA,
   type SpendDnaMonthSlice,
 } from "@/components/insights/SpendDNA"
+import { InsightsBarChart } from "@/components/insights/InsightsBarChart"
 import type { SpendCategory } from "@/types"
 
 interface MonthSummary {
@@ -43,7 +42,7 @@ export default async function InsightsPage() {
 
   const currency = profile?.currency ?? "GBP"
 
-  // Fetch last 4 months of data
+  // ── Fetch last 4 months ────────────────────────────────────────────────
   const months: MonthSummary[] = []
   for (let i = 0; i < 4; i++) {
     const d = subMonths(new Date(), i)
@@ -75,23 +74,6 @@ export default async function InsightsPage() {
     })
   }
 
-  // Top merchants (current month)
-  const { data: allTx } = await supabase
-    .from("transactions")
-    .select("merchant, amount")
-    .eq("user_id", user.id)
-    .gte("date", monthBounds(months[0].key).start)
-    .lte("date", monthBounds(months[0].key).end)
-
-  const merchantMap: Record<string, number> = {}
-  for (const r of allTx ?? []) {
-    const m = r.merchant ?? "Unknown"
-    merchantMap[m] = (merchantMap[m] ?? 0) + Number.parseFloat(r.amount)
-  }
-  const topMerchants = Object.entries(merchantMap)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5)
-
   const thisMonth = months[0]
   const lastMonth = months[1]
   const momDelta =
@@ -106,119 +88,296 @@ export default async function InsightsPage() {
     SpendDnaMonthSlice,
     SpendDnaMonthSlice,
   ] = [
-    {
-      key: months[2].key,
-      label: months[2].label,
-      percentages: { ...months[2].dnaPct },
-    },
-    {
-      key: months[1].key,
-      label: months[1].label,
-      percentages: { ...months[1].dnaPct },
-    },
-    {
-      key: months[0].key,
-      label: months[0].label,
-      percentages: { ...months[0].dnaPct },
-    },
+    { key: months[2].key, label: months[2].label, percentages: { ...months[2].dnaPct } },
+    { key: months[1].key, label: months[1].label, percentages: { ...months[1].dnaPct } },
+    { key: months[0].key, label: months[0].label, percentages: { ...months[0].dnaPct } },
   ]
 
+  const barData = [...months].reverse().map((m) => ({
+    key: m.key,
+    label: m.label,
+    total: m.total,
+    pct: maxMonthTotal > 0 ? (m.total / maxMonthTotal) * 100 : 0,
+    isCurrent: m.key === thisMonth.key,
+  }))
+
   return (
-    <div className="mx-auto max-w-[1200px] px-8 py-8">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="heading-tight text-2xl text-foreground sm:text-[24px]">
-          Insights
-        </h1>
-        <p className="mt-1 text-sm leading-relaxed text-muted-foreground sm:text-[14px]">
-          Spending patterns, trends, and your top categories.
-        </p>
+    <div
+      className="mx-auto max-w-[1200px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8"
+      style={{ WebkitFontSmoothing: "antialiased" }}
+    >
+      {/* ── Outlined header card ──────────────────────────────────── */}
+      <div
+        style={{
+          background: "#111110",
+          border: "1px solid rgba(255,255,255,0.07)",
+          borderRadius: "1.25rem",
+          padding: "clamp(1.5rem, 4vw, 2rem)",
+          marginBottom: "1.5rem",
+          position: "relative",
+          overflow: "hidden",
+        }}
+      >
+        {/* Grain */}
+        <div
+          aria-hidden
+          style={{
+            position: "absolute",
+            inset: 0,
+            pointerEvents: "none",
+            zIndex: 0,
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E")`,
+            opacity: 0.45,
+          }}
+        />
+        {/* Glow */}
+        <div
+          aria-hidden
+          style={{
+            position: "absolute",
+            top: "-50%",
+            left: "-10%",
+            width: "50%",
+            height: "200%",
+            background:
+              "radial-gradient(ellipse at center, rgba(34,197,94,0.09) 0%, transparent 65%)",
+            pointerEvents: "none",
+            zIndex: 0,
+          }}
+        />
+        <div style={{ position: "relative", zIndex: 1 }}>
+          <h1
+            style={{
+              fontSize: "clamp(1.75rem, 3.5vw, 2.5rem)",
+              fontWeight: 800,
+              letterSpacing: "-0.04em",
+              textTransform: "uppercase",
+              lineHeight: 0.9,
+              marginBottom: "0.5rem",
+            }}
+          >
+            <span
+              style={{
+                display: "block",
+                color: "transparent",
+                WebkitTextFillColor: "transparent",
+                WebkitTextStroke: "1.5px rgba(240,239,233,0.45)",
+              }}
+            >
+              Spending
+            </span>
+            <span
+              style={{
+                display: "block",
+                color: "#22c55e",
+                WebkitTextFillColor: "#22c55e",
+                WebkitTextStroke: "0px",
+              }}
+            >
+              Insights.
+            </span>
+          </h1>
+          <p
+            style={{
+              marginTop: "0.875rem",
+              fontSize: "0.875rem",
+              color: "rgba(240,239,233,0.38)",
+              lineHeight: 1.55,
+            }}
+          >
+            Spending patterns, trends, and your monthly DNA.
+          </p>
+        </div>
       </div>
 
-      <div className="space-y-6">
+      <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+
+        {/* ── 3 stat cards ──────────────────────────────────────────── */}
         <div className="grid gap-4 sm:grid-cols-3">
-          <div className="rounded-2xl border border-border bg-card p-6 shadow-elevation-sm">
-            <p className="label-caps text-muted-foreground">This month</p>
+
+          {/* This month */}
+          <div
+            style={{
+              background: "rgba(255,255,255,0.04)",
+              border: "1px solid rgba(255,255,255,0.08)",
+              borderRadius: "1rem",
+              padding: "1.375rem",
+            }}
+          >
             <p
-              className="number-display mt-2 text-[32px] text-foreground"
-              style={{ letterSpacing: "-0.02em" }}
+              style={{
+                fontSize: "0.62rem",
+                fontWeight: 700,
+                letterSpacing: "0.1em",
+                textTransform: "uppercase",
+                color: "rgba(240,239,233,0.35)",
+                marginBottom: "0.5rem",
+              }}
+            >
+              This month
+            </p>
+            <p
+              style={{
+                fontSize: "2rem",
+                fontWeight: 800,
+                letterSpacing: "-0.04em",
+                lineHeight: 1,
+                color: "#f0efe9",
+                fontVariantNumeric: "tabular-nums",
+              }}
             >
               {formatMoney(thisMonth.total, currency)}
             </p>
-            <p className="mt-1 text-[13px] text-muted-foreground">{thisMonth.label}</p>
+            <p
+              style={{
+                marginTop: "0.375rem",
+                fontSize: "0.8rem",
+                color: "rgba(240,239,233,0.3)",
+              }}
+            >
+              {thisMonth.txCount} transaction{thisMonth.txCount !== 1 ? "s" : ""}
+            </p>
           </div>
 
-          <div className="rounded-2xl border border-border bg-card p-6 shadow-elevation-sm">
-            <p className="label-caps text-muted-foreground">Last month</p>
+          {/* Last month */}
+          <div
+            style={{
+              background: "rgba(255,255,255,0.04)",
+              border: "1px solid rgba(255,255,255,0.08)",
+              borderRadius: "1rem",
+              padding: "1.375rem",
+            }}
+          >
             <p
-              className="number-display mt-2 text-[32px] text-foreground"
-              style={{ letterSpacing: "-0.02em" }}
+              style={{
+                fontSize: "0.62rem",
+                fontWeight: 700,
+                letterSpacing: "0.1em",
+                textTransform: "uppercase",
+                color: "rgba(240,239,233,0.35)",
+                marginBottom: "0.5rem",
+              }}
+            >
+              Last month
+            </p>
+            <p
+              style={{
+                fontSize: "2rem",
+                fontWeight: 800,
+                letterSpacing: "-0.04em",
+                lineHeight: 1,
+                color: "#f0efe9",
+                fontVariantNumeric: "tabular-nums",
+              }}
             >
               {formatMoney(lastMonth.total, currency)}
             </p>
-            <p className="mt-1 text-[13px] text-muted-foreground">{lastMonth.label}</p>
+            <p
+              style={{
+                marginTop: "0.375rem",
+                fontSize: "0.8rem",
+                color: "rgba(240,239,233,0.3)",
+              }}
+            >
+              {lastMonth.label}
+            </p>
           </div>
 
-          <div className="rounded-2xl border border-border bg-card p-6 shadow-elevation-sm">
-            <p className="label-caps text-muted-foreground">Vs last month</p>
-            <div className="mt-2 flex items-center gap-2">
+          {/* MoM delta */}
+          <div
+            style={{
+              background:
+                momDelta > 5
+                  ? "rgba(248,113,113,0.05)"
+                  : momDelta < -5
+                    ? "rgba(34,197,94,0.05)"
+                    : "rgba(255,255,255,0.04)",
+              border:
+                momDelta > 5
+                  ? "1px solid rgba(248,113,113,0.18)"
+                  : momDelta < -5
+                    ? "1px solid rgba(34,197,94,0.18)"
+                    : "1px solid rgba(255,255,255,0.08)",
+              borderRadius: "1rem",
+              padding: "1.375rem",
+            }}
+          >
+            <p
+              style={{
+                fontSize: "0.62rem",
+                fontWeight: 700,
+                letterSpacing: "0.1em",
+                textTransform: "uppercase",
+                color: "rgba(240,239,233,0.35)",
+                marginBottom: "0.5rem",
+              }}
+            >
+              Vs last month
+            </p>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "0.5rem",
+              }}
+            >
               {momDelta > 5 ? (
-                <TrendingUp className="size-6 text-destructive" aria-hidden />
+                <TrendingUp
+                  style={{ width: "1.375rem", height: "1.375rem", color: "#f87171", flexShrink: 0 }}
+                />
               ) : momDelta < -5 ? (
-                <TrendingDown className="size-6 text-penny-green" aria-hidden />
+                <TrendingDown
+                  style={{ width: "1.375rem", height: "1.375rem", color: "#22c55e", flexShrink: 0 }}
+                />
               ) : (
-                <Minus className="size-6 text-muted-foreground" aria-hidden />
+                <Minus
+                  style={{
+                    width: "1.375rem",
+                    height: "1.375rem",
+                    color: "rgba(240,239,233,0.4)",
+                    flexShrink: 0,
+                  }}
+                />
               )}
               <p
-                className={cn(
-                  "number-display text-[32px]",
-                  momDelta > 5 && "text-destructive",
-                  momDelta < -5 && "text-penny-green",
-                  momDelta >= -5 && momDelta <= 5 && "text-muted-foreground"
-                )}
-                style={{ letterSpacing: "-0.02em" }}
+                style={{
+                  fontSize: "2rem",
+                  fontWeight: 800,
+                  letterSpacing: "-0.04em",
+                  lineHeight: 1,
+                  fontVariantNumeric: "tabular-nums",
+                  color:
+                    momDelta > 5
+                      ? "#f87171"
+                      : momDelta < -5
+                        ? "#22c55e"
+                        : "rgba(240,239,233,0.45)",
+                }}
               >
                 {momDelta >= 0 ? "+" : ""}
                 {momDelta.toFixed(0)}%
               </p>
             </div>
-            <p className="mt-1 text-[13px] text-muted-foreground">
-              {momDelta > 0 ? "More than last month" : momDelta < 0 ? "Less than last month" : "Same as last month"}
+            <p
+              style={{
+                marginTop: "0.375rem",
+                fontSize: "0.8rem",
+                color: "rgba(240,239,233,0.3)",
+              }}
+            >
+              {momDelta > 0
+                ? "More than last month"
+                : momDelta < 0
+                  ? "Less than last month"
+                  : "Same as last month"}
             </p>
           </div>
         </div>
 
-        <div className="rounded-2xl border border-border bg-card p-6 shadow-elevation-sm">
-          <h2 className="mb-5 text-[16px] font-semibold tracking-tight text-foreground">
-            Monthly spending
-          </h2>
-          <div className="flex h-36 items-end gap-3">
-            {[...months].reverse().map((m) => {
-              const pct = maxMonthTotal > 0 ? (m.total / maxMonthTotal) * 100 : 0
-              const isThisMonth = m.key === months[0].key
-              return (
-                <div key={m.key} className="flex flex-1 flex-col items-center gap-2">
-                  <p className="text-[12px] tabular-nums text-muted-foreground">
-                    {formatMoney(m.total, currency)}
-                  </p>
-                  <div
-                    className={cn(
-                      "w-full rounded-t-lg",
-                      isThisMonth ? "bg-penny-green" : "bg-muted"
-                    )}
-                    style={{
-                      height: `${Math.max(pct, 4)}%`,
-                      maxHeight: "100%",
-                      minHeight: 8,
-                    }}
-                  />
-                  <p className="text-[11px] font-medium text-muted-foreground">{m.label}</p>
-                </div>
-              )
-            })}
-          </div>
-        </div>
+        {/* ── Animated bar chart ────────────────────────────────────── */}
+        <InsightsBarChart currency={currency} bars={barData} />
 
+        {/* ── Spend DNA ─────────────────────────────────────────────── */}
         <SpendDNA
           archetype={spendArchetype}
           txCountThisMonth={months[0].txCount}
@@ -226,58 +385,6 @@ export default async function InsightsPage() {
           evolution={spendDnaEvolution}
         />
 
-        {/* Category breakdown + top merchants */}
-        <div className="grid gap-4 lg:grid-cols-2">
-          <CategoryBars
-            currency={currency}
-            byCategory={thisMonth.byCategory}
-            totalSpent={thisMonth.total}
-          />
-
-          {/* Top merchants */}
-          <div className="rounded-2xl border border-border bg-card p-6 shadow-elevation-sm transition-[border-color,box-shadow] duration-200 hover:border-border-strong hover:shadow-elevation-md">
-            <h2 className="mb-5 text-[16px] font-semibold tracking-tight text-foreground">
-              Top merchants
-            </h2>
-            {topMerchants.length === 0 ? (
-              <p className="py-8 text-center text-[14px] text-muted-foreground">
-                No transactions this month yet.
-              </p>
-            ) : (
-              <ul className="space-y-4">
-                {topMerchants.map(([merchant, amount], idx) => {
-                  const pct = thisMonth.total > 0 ? (amount / thisMonth.total) * 100 : 0
-                  return (
-                    <li key={merchant}>
-                      <div className="mb-1.5 flex items-center justify-between">
-                        <div className="flex items-center gap-2.5">
-                          <span className="flex size-6 items-center justify-center rounded-full bg-muted text-[11px] font-bold text-muted-foreground">
-                            {idx + 1}
-                          </span>
-                          <span className="text-[14px] font-medium capitalize text-foreground">
-                            {merchant}
-                          </span>
-                        </div>
-                        <div className="flex items-baseline gap-2">
-                          <span className="text-[12px] text-muted-foreground">{pct.toFixed(0)}%</span>
-                          <span className="text-[14px] font-semibold tabular-nums text-foreground">
-                            {formatMoney(amount, currency)}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-                        <div
-                          className="h-full rounded-full bg-penny-green"
-                          style={{ width: `${pct}%` }}
-                        />
-                      </div>
-                    </li>
-                  )
-                })}
-              </ul>
-            )}
-          </div>
-        </div>
       </div>
     </div>
   )

@@ -16,64 +16,63 @@ import { EmptyState } from "@/components/ui/empty-state"
 import { SPEND_CATEGORIES, type SpendCategory } from "@/types"
 import { formatMoney } from "@/lib/utils/parser"
 import { MOTION } from "@/lib/motion/presets"
-import { cn } from "@/lib/utils"
 
 const CATEGORY_META: Record<
   SpendCategory,
   {
-    icon: React.ComponentType<{ className?: string }>
-    color: string
+    icon: React.ComponentType<{ style?: React.CSSProperties }>
+    iconColor: string
+    iconBg: string
     barColor: string
-    bg: string
   }
 > = {
   rent: {
     icon: Home,
-    color: "text-blue-600",
+    iconColor: "#60a5fa",
+    iconBg: "rgba(96,165,250,0.12)",
     barColor: "#3B82F6",
-    bg: "bg-blue-50",
   },
   groceries: {
     icon: ShoppingCart,
-    color: "text-emerald-600",
+    iconColor: "#34d399",
+    iconBg: "rgba(52,211,153,0.12)",
     barColor: "#059669",
-    bg: "bg-emerald-50",
   },
   food: {
     icon: UtensilsCrossed,
-    color: "text-orange-600",
+    iconColor: "#fb923c",
+    iconBg: "rgba(251,146,60,0.12)",
     barColor: "#F97316",
-    bg: "bg-orange-50",
   },
   travel: {
     icon: Plane,
-    color: "text-sky-600",
+    iconColor: "#38bdf8",
+    iconBg: "rgba(56,189,248,0.12)",
     barColor: "#0EA5E9",
-    bg: "bg-sky-50",
   },
   subscriptions: {
     icon: RefreshCw,
-    color: "text-violet-600",
+    iconColor: "#a78bfa",
+    iconBg: "rgba(167,139,250,0.12)",
     barColor: "#8B5CF6",
-    bg: "bg-violet-50",
   },
   clothes: {
     icon: Shirt,
-    color: "text-pink-600",
+    iconColor: "#f472b6",
+    iconBg: "rgba(244,114,182,0.12)",
     barColor: "#EC4899",
-    bg: "bg-pink-50",
   },
   entertainment: {
     icon: Popcorn,
-    color: "text-amber-600",
+    iconColor: "#fbbf24",
+    iconBg: "rgba(251,191,36,0.12)",
     barColor: "#D97706",
-    bg: "bg-amber-50",
   },
   misc: {
     icon: CircleDot,
-    color: "text-muted-foreground",
-    barColor: "#a8a29e",
-    bg: "bg-muted",
+    iconColor: "rgba(240,239,233,0.42)",
+    iconBg: "rgba(255,255,255,0.06)",
+    barColor: "#78716c",
   },
 }
 
@@ -101,17 +100,47 @@ export function CategoryBars(props: {
   }
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-6 shadow-elevation-sm transition-[border-color,box-shadow] duration-200 hover:border-border-strong hover:shadow-elevation-md">
-      <div className="mb-5 flex items-center justify-between">
-        <h3 className="text-[16px] font-semibold tracking-tight text-foreground">
+    <div
+      style={{
+        background: "rgba(255,255,255,0.04)",
+        border: "1px solid rgba(255,255,255,0.08)",
+        borderRadius: "1rem",
+        padding: "1.5rem",
+        WebkitFontSmoothing: "antialiased",
+      }}
+    >
+      {/* Header */}
+      <div
+        style={{
+          marginBottom: "1.25rem",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        <h3
+          style={{
+            fontSize: "0.9375rem",
+            fontWeight: 600,
+            letterSpacing: "-0.02em",
+            color: "#f0efe9",
+          }}
+        >
           Spending by category
         </h3>
-        <span className="text-[12px] tabular-nums text-muted-foreground">
+        <span
+          style={{
+            fontSize: "0.72rem",
+            fontVariantNumeric: "tabular-nums",
+            color: "rgba(240,239,233,0.3)",
+          }}
+        >
           {entries.length} categor{entries.length === 1 ? "y" : "ies"}
         </span>
       </div>
 
-      <ul className="space-y-5">
+      {/* Category rows */}
+      <ul style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
         {entries
           .sort((a, b) => b.v - a.v)
           .map(({ c, v }, idx) => {
@@ -122,30 +151,78 @@ export function CategoryBars(props: {
 
             return (
               <li key={c}>
-                <div className="mb-2 flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2.5">
+                <div
+                  style={{
+                    marginBottom: "0.5rem",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: "0.5rem",
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.625rem" }}>
                     <div
-                      className={cn(
-                        "flex size-8 items-center justify-center rounded-lg",
-                        meta.bg
-                      )}
+                      style={{
+                        width: "2rem",
+                        height: "2rem",
+                        flexShrink: 0,
+                        borderRadius: "0.5rem",
+                        background: meta.iconBg,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
                     >
-                      <Icon className={cn("size-4", meta.color)} />
+                      <Icon style={{ width: "0.9rem", height: "0.9rem", color: meta.iconColor }} />
                     </div>
-                    <span className="text-[14px] font-medium capitalize text-foreground">
+                    <span
+                      style={{
+                        fontSize: "0.875rem",
+                        fontWeight: 500,
+                        textTransform: "capitalize",
+                        color: "rgba(240,239,233,0.82)",
+                      }}
+                    >
                       {c}
                     </span>
                   </div>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-[12px] tabular-nums text-muted-foreground">
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "baseline",
+                      gap: "0.5rem",
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: "0.72rem",
+                        fontVariantNumeric: "tabular-nums",
+                        color: "rgba(240,239,233,0.3)",
+                      }}
+                    >
                       {pct}%
                     </span>
-                    <span className="text-[14px] font-semibold tabular-nums text-foreground">
+                    <span
+                      style={{
+                        fontSize: "0.875rem",
+                        fontWeight: 600,
+                        fontVariantNumeric: "tabular-nums",
+                        color: "#f0efe9",
+                      }}
+                    >
                       {formatMoney(v, currency)}
                     </span>
                   </div>
                 </div>
-                <div className="h-2 overflow-hidden rounded-full bg-muted">
+
+                <div
+                  style={{
+                    height: "0.375rem",
+                    borderRadius: "9999px",
+                    overflow: "hidden",
+                    background: "rgba(255,255,255,0.07)",
+                  }}
+                >
                   <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: `${barWidth}%` }}
@@ -154,8 +231,11 @@ export function CategoryBars(props: {
                       ease: MOTION.easeOutSoft,
                       delay: 0.3 + idx * 0.06,
                     }}
-                    className="h-full rounded-full"
-                    style={{ backgroundColor: meta.barColor }}
+                    style={{
+                      height: "100%",
+                      borderRadius: "9999px",
+                      background: meta.barColor,
+                    }}
                   />
                 </div>
               </li>

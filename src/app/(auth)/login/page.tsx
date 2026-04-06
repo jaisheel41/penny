@@ -3,30 +3,32 @@
 import { Suspense, useState } from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
-import { MailCheck, Sparkles } from "lucide-react"
+import { MailCheck } from "lucide-react"
 import { motion, useReducedMotion } from "framer-motion"
-
-import { Button } from "@/components/ui/button"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { MOTION } from "@/lib/motion/presets"
 import { createClient } from "@/lib/supabase/client"
+
+const ease: [number, number, number, number] = [0.22, 1, 0.36, 1]
+
+// ── Stagger variants ──────────────────────────────────────────────────────
+const container = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.08 } },
+}
+const item = {
+  hidden: { opacity: 0, y: 14 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.55, ease } },
+}
 
 function LoginForm() {
   const searchParams = useSearchParams()
-  const error = searchParams.get("error")
-  const reduceMotion = useReducedMotion()
+  const urlError = searchParams.get("error")
+  const shouldReduceMotion = useReducedMotion()
+
   const [email, setEmail] = useState("")
   const [sent, setSent] = useState(false)
   const [loading, setLoading] = useState(false)
   const [err, setErr] = useState<string | null>(null)
+  const [focused, setFocused] = useState(false)
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -47,97 +49,310 @@ function LoginForm() {
     setSent(true)
   }
 
-  return (
-    <>
-      <div className="mb-8 text-center lg:hidden">
-        <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-2xl bg-penny-green text-white shadow-elevation-sm">
-          <Sparkles className="size-5" aria-hidden />
-        </div>
-        <p className="text-lg font-semibold tracking-tight text-foreground">Sign in to Penny</p>
-        <p className="mt-1 text-sm text-muted-foreground">We&apos;ll email you a magic link.</p>
-      </div>
+  // ── Sent state ────────────────────────────────────────────────────────
+  if (sent) {
+    return (
+      <motion.div
+        initial={shouldReduceMotion ? false : { opacity: 0, scale: 0.97 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5, ease }}
+        style={{ textAlign: "center" }}
+      >
+        {/* Spring mail icon */}
+        <motion.div
+          initial={shouldReduceMotion ? false : { scale: 0.6, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: "spring", stiffness: 360, damping: 22, delay: 0.1 }}
+          style={{
+            width: "4.5rem",
+            height: "4.5rem",
+            background: "rgba(34,197,94,0.12)",
+            border: "1px solid rgba(34,197,94,0.25)",
+            borderRadius: "50%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            margin: "0 auto 1.75rem",
+          }}
+        >
+          <MailCheck style={{ width: "1.75rem", height: "1.75rem", color: "#16a34a" }} />
+        </motion.div>
 
-      <Card className="w-full border-border shadow-elevation-md">
-        <CardHeader className="hidden space-y-2 text-center lg:block lg:pt-8">
-          <div className="mx-auto mb-2 flex size-12 items-center justify-center rounded-2xl bg-penny-green text-white shadow-elevation-sm">
-            <Sparkles className="size-5" aria-hidden />
-          </div>
-          <CardTitle className="text-2xl tracking-tight">Sign in to Penny</CardTitle>
-          <CardDescription className="text-pretty">
-            We&apos;ll email you a magic link — no password needed.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {error === "auth" && (
-            <p className="mb-4 rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
-              Something went wrong signing you in. Try again.
-            </p>
-          )}
-          {sent ? (
-            <motion.div
-              initial={reduceMotion ? false : { opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{
-                duration: MOTION.base,
-                ease: MOTION.easeStandard,
+        <motion.h2
+          initial={shouldReduceMotion ? false : { opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, delay: 0.18, ease }}
+          style={{
+            fontSize: "1.4rem",
+            fontWeight: 800,
+            letterSpacing: "-0.03em",
+            color: "#1c1917",
+            marginBottom: "0.6rem",
+          }}
+        >
+          Check your inbox
+        </motion.h2>
+
+        <motion.p
+          initial={shouldReduceMotion ? false : { opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, delay: 0.26, ease }}
+          style={{
+            fontSize: "0.9rem",
+            color: "rgba(28,25,23,0.55)",
+            lineHeight: 1.7,
+            marginBottom: "2rem",
+          }}
+        >
+          We sent a sign-in link to{" "}
+          <strong style={{ color: "#1c1917", fontWeight: 600 }}>{email}</strong>.
+          <br />
+          It expires in 10 minutes.
+        </motion.p>
+
+        <motion.button
+          initial={shouldReduceMotion ? false : { opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.4, delay: 0.35 }}
+          onClick={() => { setSent(false); setEmail("") }}
+          style={{
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            fontSize: "0.85rem",
+            color: "#0d9488",
+            fontWeight: 500,
+            fontFamily: "var(--font-geist-sans)",
+            textDecoration: "underline",
+            textUnderlineOffset: "3px",
+          }}
+        >
+          Try a different email
+        </motion.button>
+      </motion.div>
+    )
+  }
+
+  // ── Login form ────────────────────────────────────────────────────────
+  return (
+    <motion.div
+      variants={container}
+      initial={shouldReduceMotion ? false : "hidden"}
+      animate="show"
+    >
+      {/* Heading */}
+      <motion.div variants={item} style={{ marginBottom: "2.25rem" }}>
+        <h2
+          style={{
+            fontSize: "clamp(1.6rem,3vw,2rem)",
+            fontWeight: 800,
+            letterSpacing: "-0.035em",
+            color: "#1c1917",
+            lineHeight: 1.1,
+            marginBottom: "0.6rem",
+          }}
+        >
+          Sign in to Penny
+        </h2>
+        <p
+          style={{
+            fontSize: "0.9rem",
+            color: "rgba(28,25,23,0.52)",
+            lineHeight: 1.65,
+          }}
+        >
+          We&apos;ll email you a magic link —<br />no password needed.
+        </p>
+      </motion.div>
+
+      {/* Error from URL */}
+      {urlError === "auth" && (
+        <motion.div
+          variants={item}
+          style={{
+            marginBottom: "1.25rem",
+            padding: "0.875rem 1rem",
+            borderRadius: "0.75rem",
+            background: "rgba(220,38,38,0.08)",
+            border: "1px solid rgba(220,38,38,0.18)",
+            fontSize: "0.85rem",
+            color: "#dc2626",
+          }}
+        >
+          Something went wrong signing you in. Please try again.
+        </motion.div>
+      )}
+
+      {/* Form */}
+      <form onSubmit={onSubmit}>
+        <motion.div variants={item} style={{ marginBottom: "1rem" }}>
+          {/* Label */}
+          <label
+            htmlFor="email"
+            style={{
+              display: "block",
+              fontSize: "0.72rem",
+              fontWeight: 600,
+              letterSpacing: "0.07em",
+              textTransform: "uppercase",
+              color: "rgba(28,25,23,0.5)",
+              marginBottom: "0.55rem",
+            }}
+          >
+            Email address
+          </label>
+
+          {/* Custom-styled input */}
+          <div
+            style={{
+              position: "relative",
+              borderRadius: "0.75rem",
+              overflow: "hidden",
+              boxShadow: focused
+                ? "0 0 0 3px rgba(34,197,94,0.15)"
+                : "0 1px 2px rgba(28,25,23,0.06)",
+              transition: "box-shadow 0.2s ease",
+            }}
+          >
+            <input
+              id="email"
+              type="email"
+              autoComplete="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              onFocus={() => setFocused(true)}
+              onBlur={() => setFocused(false)}
+              placeholder="you@example.com"
+              style={{
+                width: "100%",
+                background: "#ffffff",
+                border: `1.5px solid ${focused ? "#22c55e" : "#e4e0d8"}`,
+                borderRadius: "0.75rem",
+                padding: "0.875rem 1.125rem",
+                fontSize: "0.95rem",
+                color: "#1c1917",
+                fontFamily: "var(--font-geist-sans)",
+                outline: "none",
+                transition: "border-color 0.2s ease",
+                appearance: "none",
+                WebkitAppearance: "none",
+                boxSizing: "border-box",
               }}
-              className="rounded-xl border border-penny-green/25 bg-penny-green-muted p-6 text-center"
-            >
-              <motion.div
-                className="mx-auto mb-4 flex size-14 items-center justify-center rounded-full bg-card text-penny-green shadow-elevation-sm"
-                initial={reduceMotion ? false : { scale: 0.85, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{
-                  type: "spring",
-                  stiffness: 380,
-                  damping: 22,
-                  delay: reduceMotion ? 0 : 0.05,
-                }}
-              >
-                <MailCheck className="size-7" aria-hidden />
-              </motion.div>
-              <p className="font-semibold text-penny-green">Check your inbox</p>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                We sent a sign-in link to <strong className="text-foreground">{email}</strong>.
-              </p>
-            </motion.div>
-          ) : (
-            <form onSubmit={onSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email address</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
+            />
+          </div>
+        </motion.div>
+
+        {/* Inline error */}
+        {err && (
+          <motion.p
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            style={{
+              fontSize: "0.82rem",
+              color: "#dc2626",
+              marginBottom: "0.875rem",
+              marginTop: "-0.25rem",
+            }}
+          >
+            {err}
+          </motion.p>
+        )}
+
+        {/* Submit button */}
+        <motion.div variants={item} style={{ marginTop: "0.25rem" }}>
+          <button
+            type="submit"
+            disabled={loading}
+            style={{
+              width: "100%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "0.5rem",
+              padding: "0.9375rem 1.5rem",
+              borderRadius: "999px",
+              background: loading ? "#86efac" : "#22c55e",
+              color: "#0d0d0c",
+              border: "none",
+              fontWeight: 700,
+              fontSize: "0.95rem",
+              fontFamily: "var(--font-geist-sans)",
+              letterSpacing: "-0.01em",
+              cursor: loading ? "not-allowed" : "pointer",
+              transition: "background 0.2s ease, transform 0.15s ease, box-shadow 0.15s ease",
+              boxShadow: loading
+                ? "none"
+                : "rgba(0,0,0,0.1) 0px 1px 1px, rgba(0,0,0,0.05) 0px 2px 4px, rgba(255,255,255,0.35) 0px 0.5px 0px 0px inset",
+            }}
+            onMouseEnter={(e) => {
+              if (!loading) {
+                (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)"
+                ;(e.currentTarget as HTMLButtonElement).style.boxShadow =
+                  "0 6px 20px rgba(34,197,94,0.3)"
+              }
+            }}
+            onMouseLeave={(e) => {
+              ;(e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)"
+              ;(e.currentTarget as HTMLButtonElement).style.boxShadow =
+                "rgba(0,0,0,0.1) 0px 1px 1px, rgba(0,0,0,0.05) 0px 2px 4px, rgba(255,255,255,0.35) 0px 0.5px 0px 0px inset"
+            }}
+          >
+            {loading ? (
+              <>
+                <span
+                  style={{
+                    display: "inline-block",
+                    width: "1rem",
+                    height: "1rem",
+                    border: "2px solid rgba(13,13,12,0.25)",
+                    borderTopColor: "#0d0d0c",
+                    borderRadius: "50%",
+                    animation: "spin 0.7s linear infinite",
+                  }}
                 />
-              </div>
-              {err && <p className="text-sm text-destructive">{err}</p>}
-              <Button
-                type="submit"
-                variant="success"
-                size="lg"
-                className="w-full shadow-elevation-sm transition-shadow hover:shadow-elevation-md"
-                disabled={loading}
-              >
-                {loading ? "Sending…" : "Send magic link"}
-              </Button>
-            </form>
-          )}
-          <p className="mt-6 text-center text-sm text-muted-foreground">
-            <Link
-              href="/"
-              className="font-medium text-penny-teal underline-offset-4 hover:underline"
-            >
-              Back to home
-            </Link>
-          </p>
-        </CardContent>
-      </Card>
-    </>
+                Sending…
+              </>
+            ) : (
+              "Send magic link →"
+            )}
+          </button>
+        </motion.div>
+      </form>
+
+      {/* Back link */}
+      <motion.p
+        variants={item}
+        style={{
+          marginTop: "1.75rem",
+          textAlign: "center",
+          fontSize: "0.82rem",
+          color: "rgba(28,25,23,0.4)",
+        }}
+      >
+        <Link
+          href="/"
+          style={{
+            color: "#0d9488",
+            textDecoration: "none",
+            fontWeight: 500,
+          }}
+          onMouseEnter={(e) =>
+            ((e.target as HTMLAnchorElement).style.textDecoration = "underline")
+          }
+          onMouseLeave={(e) =>
+            ((e.target as HTMLAnchorElement).style.textDecoration = "none")
+          }
+        >
+          ← Back to home
+        </Link>
+      </motion.p>
+
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+        input::placeholder { color: rgba(28,25,23,0.3); }
+      `}</style>
+    </motion.div>
   )
 }
 
@@ -145,9 +360,27 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <Card className="w-full max-w-md border-border p-8 shadow-elevation-sm">
-          Loading…
-        </Card>
+        <div
+          style={{
+            width: "100%",
+            height: "12rem",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <div
+            style={{
+              width: "1.5rem",
+              height: "1.5rem",
+              border: "2px solid rgba(28,25,23,0.12)",
+              borderTopColor: "#22c55e",
+              borderRadius: "50%",
+              animation: "spin 0.7s linear infinite",
+            }}
+          />
+          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        </div>
       }
     >
       <LoginForm />

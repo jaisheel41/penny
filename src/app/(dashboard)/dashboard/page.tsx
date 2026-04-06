@@ -107,6 +107,9 @@ export default async function DashboardPage() {
         dailyRate,
         daysRemaining,
         pulseText,
+        dayOfMonth: ref.getDate(),
+        totalDaysInMonth: new Date(ref.getFullYear(), ref.getMonth() + 1, 0).getDate(),
+        byCategory,
       }}
     />
   )

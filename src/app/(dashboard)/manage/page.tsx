@@ -12,7 +12,6 @@ import {
 } from "@/lib/dashboard/aggregates"
 import { createClient } from "@/lib/supabase/server"
 import { SPEND_CATEGORIES } from "@/types"
-import { cn } from "@/lib/utils"
 
 interface Props {
   searchParams: Promise<{ tab?: string; month?: string; category?: string }>
@@ -43,17 +42,95 @@ export default async function ManagePage({ searchParams }: Props) {
       : "GBP"
 
   return (
-    <div className="mx-auto max-w-[1200px] px-8 py-8">
-      {/* Page header */}
-      <div className="mb-8">
-        <h1 className="heading-tight text-2xl text-foreground sm:text-[24px]">
-          Manage
-        </h1>
-        <p className="mt-1 text-sm leading-relaxed text-muted-foreground sm:text-[14px]">
-          Transactions, budgets &amp; subscriptions — all in one place.
-        </p>
+    <div
+      className="mx-auto max-w-[1200px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8"
+      style={{ WebkitFontSmoothing: "antialiased" }}
+    >
+      {/* ── Page header card ──────────────────────────────────────── */}
+      <div
+        style={{
+          background: "#111110",
+          border: "1px solid rgba(255,255,255,0.07)",
+          borderRadius: "1.25rem",
+          padding: "clamp(1.5rem, 4vw, 2rem)",
+          marginBottom: "1.5rem",
+          position: "relative",
+          overflow: "hidden",
+        }}
+      >
+        {/* Grain */}
+        <div
+          aria-hidden
+          style={{
+            position: "absolute",
+            inset: 0,
+            pointerEvents: "none",
+            zIndex: 0,
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E")`,
+            opacity: 0.45,
+          }}
+        />
+        {/* Glow */}
+        <div
+          aria-hidden
+          style={{
+            position: "absolute",
+            top: "-50%",
+            left: "-10%",
+            width: "50%",
+            height: "200%",
+            background:
+              "radial-gradient(ellipse at center, rgba(34,197,94,0.09) 0%, transparent 65%)",
+            pointerEvents: "none",
+            zIndex: 0,
+          }}
+        />
+        <div style={{ position: "relative", zIndex: 1 }}>
+          <h1
+            style={{
+              fontSize: "clamp(1.75rem, 3.5vw, 2.5rem)",
+              fontWeight: 800,
+              letterSpacing: "-0.04em",
+              textTransform: "uppercase",
+              lineHeight: 0.9,
+              marginBottom: "0.5rem",
+            }}
+          >
+            <span
+              style={{
+                display: "block",
+                color: "transparent",
+                WebkitTextFillColor: "transparent",
+                WebkitTextStroke: "1.5px rgba(240,239,233,0.45)",
+              }}
+            >
+              Transactions,
+            </span>
+            <span
+              style={{
+                display: "block",
+                color: "#22c55e",
+                WebkitTextFillColor: "#22c55e",
+                WebkitTextStroke: "0px",
+              }}
+            >
+              Manage.
+            </span>
+          </h1>
+          <p
+            style={{
+              marginTop: "0.875rem",
+              fontSize: "0.875rem",
+              color: "rgba(240,239,233,0.38)",
+              lineHeight: 1.55,
+            }}
+          >
+            Transactions, budgets &amp; subscriptions — all in one place.
+          </p>
+        </div>
       </div>
 
+      {/* ── Tab content ───────────────────────────────────────────── */}
       <Suspense fallback={<TabSkeleton />}>
         <ManageTabs>
           {tab === "transactions" && (
@@ -110,9 +187,9 @@ async function TransactionsTab({
   const base = "/manage?tab=transactions"
 
   return (
-    <div className="space-y-4">
+    <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
       {/* Category filter chips */}
-      <div className="flex flex-wrap gap-2">
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.375rem" }}>
         <FilterChip
           href={`${base}&month=${month}`}
           active={!category}
@@ -205,12 +282,23 @@ function FilterChip({
   return (
     <Link
       href={href}
-      className={cn(
-        "rounded-full border px-3.5 py-1.5 text-[13px] font-medium capitalize transition-all duration-150",
-        active
-          ? "border-penny-green bg-penny-green-muted text-penny-green shadow-elevation-sm"
-          : "border-border bg-card text-muted-foreground hover:border-border-strong hover:text-foreground"
-      )}
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        padding: "0.3125rem 0.875rem",
+        borderRadius: "9999px",
+        fontSize: "0.78rem",
+        fontWeight: active ? 600 : 400,
+        textTransform: "capitalize",
+        textDecoration: "none",
+        border: active
+          ? "1px solid rgba(34,197,94,0.35)"
+          : "1px solid rgba(255,255,255,0.09)",
+        background: active ? "rgba(34,197,94,0.1)" : "rgba(255,255,255,0.03)",
+        color: active ? "#22c55e" : "rgba(240,239,233,0.48)",
+        transition: "background 0.15s ease, border-color 0.15s ease, color 0.15s ease",
+        WebkitFontSmoothing: "antialiased",
+      }}
     >
       {label}
     </Link>
@@ -219,16 +307,44 @@ function FilterChip({
 
 function TabSkeleton() {
   return (
-    <div className="space-y-4">
-      <div className="flex gap-1.5 rounded-2xl border border-border bg-muted p-1.5">
+    <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+      <div
+        style={{
+          display: "flex",
+          gap: "0.25rem",
+          background: "rgba(255,255,255,0.03)",
+          border: "1px solid rgba(255,255,255,0.07)",
+          borderRadius: "0.875rem",
+          padding: "0.3rem",
+        }}
+      >
         {[1, 2, 3].map((i) => (
           <div
             key={i}
-            className="h-10 flex-1 animate-pulse rounded-xl bg-border"
+            style={{
+              flex: 1,
+              height: "2.5rem",
+              borderRadius: "0.625rem",
+              background: "rgba(255,255,255,0.06)",
+              animation: "pulse 1.5s ease-in-out infinite",
+            }}
           />
         ))}
       </div>
-      <div className="h-64 animate-pulse rounded-2xl bg-muted" />
+      <div
+        style={{
+          height: "16rem",
+          borderRadius: "0.875rem",
+          background: "rgba(255,255,255,0.04)",
+          animation: "pulse 1.5s ease-in-out infinite",
+        }}
+      />
+      <style>{`
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.4; }
+        }
+      `}</style>
     </div>
   )
 }

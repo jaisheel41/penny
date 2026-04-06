@@ -9,7 +9,6 @@ import { EmptyState } from "@/components/ui/empty-state"
 import { Switch } from "@/components/ui/switch"
 import { formatMoney } from "@/lib/utils/parser"
 import type { Database } from "@/lib/supabase/types"
-import { cn } from "@/lib/utils"
 import { MOTION } from "@/lib/motion/presets"
 
 type Row = Database["public"]["Tables"]["subscriptions"]["Row"]
@@ -22,6 +21,19 @@ const listItem = {
     transition: { duration: 0.28, ease: MOTION.easeOutSoft, delay: i * 0.06 },
   }),
   exit: { opacity: 0, scale: 0.97, transition: { duration: 0.18 } },
+}
+
+const darkInput: React.CSSProperties = {
+  height: "2.25rem",
+  background: "rgba(255,255,255,0.05)",
+  border: "1px solid rgba(255,255,255,0.1)",
+  borderRadius: "0.5rem",
+  padding: "0 0.75rem",
+  fontSize: "0.875rem",
+  color: "#f0efe9",
+  outline: "none",
+  fontFamily: "var(--font-geist-sans)",
+  transition: "border-color 0.15s ease, box-shadow 0.15s ease",
 }
 
 export function SubscriptionsClient({
@@ -40,9 +52,22 @@ export function SubscriptionsClient({
   const [error, setError] = useState<string | null>(null)
 
   const monthlyTotal = useMemo(
-    () => rows.filter((r) => r.active).reduce((s, r) => s + Number.parseFloat(r.amount), 0),
+    () =>
+      rows
+        .filter((r) => r.active)
+        .reduce((s, r) => s + Number.parseFloat(r.amount), 0),
     [rows]
   )
+
+  function focusInput(e: React.FocusEvent<HTMLInputElement>) {
+    ;(e.target as HTMLInputElement).style.borderColor = "rgba(34,197,94,0.5)"
+    ;(e.target as HTMLInputElement).style.boxShadow =
+      "0 0 0 3px rgba(34,197,94,0.08)"
+  }
+  function blurInput(e: React.FocusEvent<HTMLInputElement>) {
+    ;(e.target as HTMLInputElement).style.borderColor = "rgba(255,255,255,0.1)"
+    ;(e.target as HTMLInputElement).style.boxShadow = "none"
+  }
 
   async function add(e: React.FormEvent) {
     e.preventDefault()
@@ -60,7 +85,9 @@ export function SubscriptionsClient({
       })
       const row = await res.json()
       if (res.ok) {
-        setRows((r) => [...r, row].sort((a, b) => a.name.localeCompare(b.name)))
+        setRows((r) =>
+          [...r, row].sort((a, b) => a.name.localeCompare(b.name))
+        )
         setName("")
         setAmount("")
         setRenewalDay("1")
@@ -95,72 +122,255 @@ export function SubscriptionsClient({
   }
 
   return (
-    <div className="space-y-5">
-      {/* Active monthly total */}
-      <div className="flex items-center justify-between rounded-2xl border border-penny-green/25 bg-penny-green-muted px-6 py-5 shadow-elevation-sm">
-        <div>
-          <p className="label-caps text-penny-green">Active monthly total</p>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: "1.25rem",
+        WebkitFontSmoothing: "antialiased",
+      }}
+    >
+      {/* ── Active monthly total — dark hero card ──────────────── */}
+      <div
+        style={{
+          background: "#111110",
+          border: "1px solid rgba(34,197,94,0.18)",
+          borderRadius: "1rem",
+          padding: "1.375rem 1.5rem",
+          position: "relative",
+          overflow: "hidden",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        {/* Grain */}
+        <div
+          aria-hidden
+          style={{
+            position: "absolute",
+            inset: 0,
+            pointerEvents: "none",
+            zIndex: 0,
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E")`,
+            opacity: 0.4,
+          }}
+        />
+        {/* Green glow */}
+        <div
+          aria-hidden
+          style={{
+            position: "absolute",
+            top: "-30%",
+            left: "-10%",
+            width: "60%",
+            height: "160%",
+            background:
+              "radial-gradient(ellipse at center, rgba(34,197,94,0.1) 0%, transparent 65%)",
+            pointerEvents: "none",
+            zIndex: 0,
+          }}
+        />
+        <div style={{ position: "relative", zIndex: 1 }}>
           <p
-            className="number-display mt-1 text-[32px] text-foreground"
-            style={{ letterSpacing: "-0.02em" }}
+            style={{
+              fontSize: "0.65rem",
+              fontWeight: 700,
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+              color: "#22c55e",
+              marginBottom: "0.25rem",
+            }}
+          >
+            Active monthly total
+          </p>
+          <p
+            style={{
+              fontSize: "2rem",
+              fontWeight: 800,
+              letterSpacing: "-0.04em",
+              lineHeight: 1,
+              color: "#f0efe9",
+              fontVariantNumeric: "tabular-nums",
+            }}
           >
             {formatMoney(monthlyTotal, currency)}
           </p>
         </div>
-        <div className="flex size-12 items-center justify-center rounded-full bg-penny-green/15">
-          <RefreshCw className="size-5 text-penny-green" aria-hidden />
+        <div
+          style={{
+            position: "relative",
+            zIndex: 1,
+            width: "3rem",
+            height: "3rem",
+            borderRadius: "50%",
+            background: "rgba(34,197,94,0.12)",
+            border: "1px solid rgba(34,197,94,0.22)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+          }}
+        >
+          <RefreshCw style={{ width: "1.25rem", height: "1.25rem", color: "#22c55e" }} />
         </div>
       </div>
 
-      <div className="rounded-2xl border border-border bg-card p-6 shadow-elevation-sm">
-        <p className="mb-4 label-caps text-muted-foreground">Add subscription</p>
-        <form onSubmit={add} className="flex flex-wrap items-end gap-3">
-          <div className="space-y-1.5">
-            <label className="text-[13px] font-medium text-foreground">Name</label>
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Netflix"
-              className="h-9 w-44 rounded-lg border border-border bg-muted px-3 text-[14px] text-foreground placeholder:text-muted-foreground outline-none transition-[border-color,box-shadow] focus:border-penny-green focus:bg-card focus:ring-3 focus:ring-penny-green/15"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-[13px] font-medium text-foreground">Amount / month</label>
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="9.99"
-              className="h-9 w-32 rounded-lg border border-border bg-muted px-3 text-[14px] text-foreground placeholder:text-muted-foreground outline-none transition-[border-color,box-shadow] focus:border-penny-green focus:bg-card focus:ring-3 focus:ring-penny-green/15"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-[13px] font-medium text-foreground">Renewal day</label>
-            <input
-              type="number"
-              min={1}
-              max={31}
-              value={renewalDay}
-              onChange={(e) => setRenewalDay(e.target.value)}
-              className="h-9 w-20 rounded-lg border border-border bg-muted px-3 text-[14px] text-foreground outline-none transition-[border-color,box-shadow] focus:border-penny-green focus:bg-card focus:ring-3 focus:ring-penny-green/15"
-            />
-          </div>
-          <motion.button
-            type="submit"
-            disabled={loading}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.97 }}
-            className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-penny-green px-4 text-[14px] font-medium text-white shadow-elevation-sm transition-colors hover:bg-penny-green-hover disabled:opacity-60"
+      {/* ── Add subscription form ─────────────────────────────── */}
+      <div
+        style={{
+          background: "#111110",
+          border: "1px solid rgba(255,255,255,0.08)",
+          borderRadius: "1rem",
+          padding: "1.5rem",
+          position: "relative",
+          overflow: "hidden",
+        }}
+      >
+        {/* Grain */}
+        <div
+          aria-hidden
+          style={{
+            position: "absolute",
+            inset: 0,
+            pointerEvents: "none",
+            zIndex: 0,
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E")`,
+            opacity: 0.4,
+          }}
+        />
+        <div style={{ position: "relative", zIndex: 1 }}>
+          <p
+            style={{
+              fontSize: "0.65rem",
+              fontWeight: 700,
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+              color: "rgba(240,239,233,0.35)",
+              marginBottom: "1rem",
+            }}
           >
-            <Plus className="size-4" aria-hidden />
-            {loading ? "Adding…" : "Add"}
-          </motion.button>
-        </form>
-        {error && <p className="mt-2 text-[13px] text-destructive">{error}</p>}
+            Add subscription
+          </p>
+          <form
+            onSubmit={add}
+            style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", gap: "0.75rem" }}
+          >
+            {/* Name */}
+            <div>
+              <label
+                style={{
+                  display: "block",
+                  fontSize: "0.72rem",
+                  fontWeight: 600,
+                  color: "rgba(240,239,233,0.45)",
+                  marginBottom: "0.35rem",
+                }}
+              >
+                Name
+              </label>
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Netflix"
+                style={{ ...darkInput, width: "11rem" }}
+                onFocus={focusInput}
+                onBlur={blurInput}
+              />
+            </div>
+
+            {/* Amount */}
+            <div>
+              <label
+                style={{
+                  display: "block",
+                  fontSize: "0.72rem",
+                  fontWeight: 600,
+                  color: "rgba(240,239,233,0.45)",
+                  marginBottom: "0.35rem",
+                }}
+              >
+                Amount / month
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder="9.99"
+                style={{ ...darkInput, width: "8rem" }}
+                onFocus={focusInput}
+                onBlur={blurInput}
+              />
+            </div>
+
+            {/* Renewal day */}
+            <div>
+              <label
+                style={{
+                  display: "block",
+                  fontSize: "0.72rem",
+                  fontWeight: 600,
+                  color: "rgba(240,239,233,0.45)",
+                  marginBottom: "0.35rem",
+                }}
+              >
+                Renewal day
+              </label>
+              <input
+                type="number"
+                min={1}
+                max={31}
+                value={renewalDay}
+                onChange={(e) => setRenewalDay(e.target.value)}
+                style={{ ...darkInput, width: "5rem" }}
+                onFocus={focusInput}
+                onBlur={blurInput}
+              />
+            </div>
+
+            {/* Submit */}
+            <motion.button
+              type="submit"
+              disabled={loading}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.97 }}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.375rem",
+                height: "2.25rem",
+                padding: "0 1rem",
+                borderRadius: "0.5rem",
+                border: "none",
+                background: "#22c55e",
+                cursor: loading ? "not-allowed" : "pointer",
+                fontSize: "0.875rem",
+                fontWeight: 700,
+                color: "#0d0d0c",
+                fontFamily: "var(--font-geist-sans)",
+                opacity: loading ? 0.6 : 1,
+              }}
+            >
+              <Plus style={{ width: "0.9rem", height: "0.9rem" }} />
+              {loading ? "Adding…" : "Add"}
+            </motion.button>
+          </form>
+          {error && (
+            <p style={{ marginTop: "0.5rem", fontSize: "0.8rem", color: "#f87171" }}>
+              {error}
+            </p>
+          )}
+        </div>
+        <style>{`
+          input::placeholder { color: rgba(240,239,233,0.22) !important; }
+          input[type="number"]::-webkit-inner-spin-button,
+          input[type="number"]::-webkit-outer-spin-button { opacity: 0.3; }
+        `}</style>
       </div>
 
+      {/* ── Subscription cards ────────────────────────────────── */}
       {rows.length === 0 ? (
         <EmptyState
           icon={RefreshCw}
@@ -179,20 +389,68 @@ export function SubscriptionsClient({
                 animate="show"
                 exit="exit"
                 layout
-                className={cn(
-                  "group rounded-2xl border border-border bg-card p-5 shadow-elevation-sm transition-[border-color,opacity,box-shadow] duration-200 hover:border-border-strong hover:shadow-elevation-md",
-                  !r.active && "opacity-50"
-                )}
+                style={{
+                  background: "rgba(255,255,255,0.04)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  borderRadius: "1rem",
+                  padding: "1.25rem",
+                  opacity: r.active ? 1 : 0.45,
+                  transition: "opacity 0.2s ease, border-color 0.2s ease",
+                  WebkitFontSmoothing: "antialiased",
+                }}
+                onMouseEnter={(e) => {
+                  if (r.active) {
+                    (e.currentTarget as HTMLDivElement).style.borderColor =
+                      "rgba(255,255,255,0.14)"
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  ;(e.currentTarget as HTMLDivElement).style.borderColor =
+                    "rgba(255,255,255,0.08)"
+                }}
               >
-                <div className="flex items-start justify-between">
-                  <div className="min-w-0">
-                    <p className="truncate text-[15px] font-semibold text-foreground">{r.name}</p>
+                {/* Top row: name + amount + toggle */}
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "flex-start",
+                    justifyContent: "space-between",
+                    gap: "0.75rem",
+                  }}
+                >
+                  <div style={{ minWidth: 0 }}>
                     <p
-                      className="mt-0.5 text-[22px] font-bold tabular-nums text-foreground"
-                      style={{ letterSpacing: "-0.02em" }}
+                      style={{
+                        fontSize: "0.9375rem",
+                        fontWeight: 600,
+                        color: "#f0efe9",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {r.name}
+                    </p>
+                    <p
+                      style={{
+                        marginTop: "0.2rem",
+                        fontSize: "1.375rem",
+                        fontWeight: 800,
+                        letterSpacing: "-0.03em",
+                        lineHeight: 1,
+                        fontVariantNumeric: "tabular-nums",
+                        color: "#f0efe9",
+                      }}
                     >
                       {formatMoney(Number.parseFloat(r.amount), currency)}
-                      <span className="ml-1.5 text-[13px] font-normal text-muted-foreground">
+                      <span
+                        style={{
+                          marginLeft: "0.375rem",
+                          fontSize: "0.8rem",
+                          fontWeight: 400,
+                          color: "rgba(240,239,233,0.35)",
+                        }}
+                      >
                         / mo
                       </span>
                     </p>
@@ -203,17 +461,57 @@ export function SubscriptionsClient({
                   />
                 </div>
 
-                <div className="mt-4 flex items-center justify-between">
-                  <span className="inline-flex items-center gap-1.5 text-[12px] text-muted-foreground">
-                    <CalendarDays className="size-3.5" aria-hidden />
+                {/* Bottom row: renewal day + delete */}
+                <div
+                  style={{
+                    marginTop: "1rem",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <span
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "0.375rem",
+                      fontSize: "0.75rem",
+                      color: "rgba(240,239,233,0.32)",
+                    }}
+                  >
+                    <CalendarDays
+                      style={{ width: "0.8rem", height: "0.8rem" }}
+                    />
                     Renews day {r.renewal_day}
                   </span>
                   <button
                     type="button"
                     onClick={() => remove(r)}
-                    className="flex size-7 items-center justify-center rounded-lg text-border-strong transition-colors hover:bg-destructive/10 hover:text-destructive"
+                    style={{
+                      width: "1.75rem",
+                      height: "1.75rem",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      borderRadius: "0.375rem",
+                      border: "none",
+                      background: "transparent",
+                      cursor: "pointer",
+                      color: "rgba(240,239,233,0.25)",
+                      transition: "background 0.15s ease, color 0.15s ease",
+                    }}
+                    onMouseEnter={(e) => {
+                      const el = e.currentTarget as HTMLButtonElement
+                      el.style.background = "rgba(248,113,113,0.1)"
+                      el.style.color = "#f87171"
+                    }}
+                    onMouseLeave={(e) => {
+                      const el = e.currentTarget as HTMLButtonElement
+                      el.style.background = "transparent"
+                      el.style.color = "rgba(240,239,233,0.25)"
+                    }}
                   >
-                    <Trash2 className="size-3.5" />
+                    <Trash2 style={{ width: "0.8rem", height: "0.8rem" }} />
                   </button>
                 </div>
               </motion.div>
